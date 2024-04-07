@@ -17,8 +17,8 @@ const registerUser = asyncHandler(async (req, res) => {
 
 
     //1.) Get user details from frontend
+    // console.log("Req body : ", req.body);
     const { username, email, password, fullName } = req.body
-    console.log("email : ", email)
 
     //2.) Validation - check if the required field is not empty if empty throw error
     if (
@@ -29,7 +29,7 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     //3.) Check if user alreaddy exists : username, email (check both email or username must unique)
-    const existingUser = User.findOne({
+    const existingUser = await User.findOne({
         $or: [{ username }, { email }]
     })
 
@@ -38,8 +38,16 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     //4.) Check for images ,check for avatar (save image or file to diskStorage or localPath of multer and avatar is required)
+    // console.log("Req files : ", req.files);
     const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    // const coverImageLocalPath = req.files?.coverImage[0]?.path;
+
+    let coverImageLocalPath;
+    if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
+        coverImageLocalPath = req.files.coverImage[0].path;
+
+    }
+
 
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar file is required")
@@ -64,14 +72,16 @@ const registerUser = asyncHandler(async (req, res) => {
 
     })
 
+    //7.) Remove password and refresh token fields
     const createdUser = await User.findById(user._id).select(
         "-password -refreshToken"
     )
 
-    if (createdUser) {
+    //8.) Check for user creation (Check if user is created and stored in databse by just selecting or retreiving the data from db)
+    if (!createdUser) {
         throw new ApiError(500, "Something went Wrong while registering the user")
     }
-
+    //9.) Send response to client
     return res.status(201).json(
         new ApiResponse(200, createdUser, "User registered Successfully")
     )
