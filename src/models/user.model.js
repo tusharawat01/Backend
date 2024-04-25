@@ -50,7 +50,7 @@ const userSchema = new Schema({
 }, { timestamps: true });
 
 //saving password to database by encrypting it so no one able to read password in databse 
-//we did not use arrow function in this because we dont have access of this in aroow function
+//we did not use arrow function in this because we dont have access of this in arrow function
 userSchema.pre("save", async function (next) {
     if (!this.isModified("password")) return next();
 
