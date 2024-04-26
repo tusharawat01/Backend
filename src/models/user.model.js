@@ -51,6 +51,7 @@ const userSchema = new Schema({
 
 //saving password to database by encrypting it so no one able to read password in databse 
 //we did not use arrow function in this because we dont have access of this in arrow function
+//This line sets up a pre-save middleware function for the "save" event on the userSchema. It means that this function will be executed just before a document (user) is saved to the database.
 userSchema.pre("save", async function (next) {
     if (!this.isModified("password")) return next();
 
@@ -58,7 +59,7 @@ userSchema.pre("save", async function (next) {
     next();
 })
 
-//comparing password rncrypted or which user send
+//comparing password encrypted or which user send
 userSchema.methods.isPasswordCorrect = async function (password) {
     return await bcrypt.compare(password, this.password)
 }
