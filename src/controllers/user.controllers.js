@@ -4,19 +4,20 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/Cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
 
-const generateAccessTokenAndRefreshTokens = async (userId) => {
+const generateAccessAndRefereshTokens = async(userId) =>{
     try {
-        const user = User.findById(userId)
+        const user = await User.findById(userId)
         const accessToken = user.generateAccessToken()
         const refreshToken = user.generateRefreshToken()
 
         user.refreshToken = refreshToken
         await user.save({ validateBeforeSave: false })
 
-        return { accessToken, refreshToken }
+        return {accessToken, refreshToken}
+
 
     } catch (error) {
-        throw new ApiError(500, "Something went wrong while generating access and refresh tokens")
+        throw new ApiError(500, "Something went wrong while generating referesh and access token")
     }
 }
 
@@ -116,7 +117,7 @@ const loginUser = asyncHandler(async (req, res) => {
     const { email, password, username } = req.body;
 
     //2.) check username or email
-    if (!username || !email) {
+    if (!username && !email) {
         throw new ApiError(400, "email or username required")
     }
 
@@ -143,7 +144,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
     //5.) generate access and refresh token
 
-    const { accessToken, refreshToken } = await generateAccessTokenAndRefreshTokens(user._id)
+    const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user._id)
 
     //6.) send cookie
 
@@ -160,17 +161,14 @@ const loginUser = asyncHandler(async (req, res) => {
         .cookie("accessToken", accessToken, options)
         .cookie("refreshToken", refreshToken, options)
         .json(
+            new ApiResponse(
             200,
             {
                 user: loggedInUser, refreshToken, accessToken
             },
             "User logged in  successfullly"
         )
-
-
-
-
-
+    )
 
 })
 

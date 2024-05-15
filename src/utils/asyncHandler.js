@@ -13,7 +13,7 @@ const asyncHandler = (requestHandler) => {
 //         await requestHandler(req, res, next);
 //     } catch (error) {
 //         res.status(error.code || 500).json({
-//             sucess: true,
+//             sucess: false,
 //             message: error.message
 //         })
 //     }
