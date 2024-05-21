@@ -14,36 +14,32 @@ const getVideoComments = asyncHandler(async (req, res) => {
 
 const addComment = asyncHandler(async (req, res) => {
     const {videoId} = req.params
-
     const {content} = req.body
 
-    if(!videoId){
-        throw new ApiError(400, "video Id is missing")
+    console.log("comment : ", req.body)
+
+    if(!videoId || !isValidObjectId(videoId)){
+        throw new ApiError(400, "video Id is missing or Invalid")
     }
 
     if(!content){
         throw new ApiError(404, "Content is required to add comment")
     }
 
-    const {fullName, username, avatar} = await User.findById(req.user?._id)
 
 
     const comment = await Comment.create({
         content,
         video: videoId,
-        owner :{
-            fullName,
-            username,
-            avatar
-        }
+        owner : req.user?._id
 
     })
 
     if(!comment){
-        throw new ApiError(500, "failed to addd comment")
+        throw new ApiError(500, "failed to add comment")
     }
 
-    return res.status(200).json(200, comment, "Comment added successfully")
+    return res.status(200).json(new ApiResponse(200, comment, "Comment added successfully"))
 
 })
 
@@ -54,8 +50,8 @@ const updateComment = asyncHandler(async (req, res) => {
     }
 
     const comment = await Comment.findById(commentId)
-    if(comment.owner?._id !== req.user?._id){
-        throw new ApiError(401, "You cannot delete this comment");
+    if(comment.owner?._id.toString() !==req.user?._id.toString()){
+        throw new ApiError(401, "You cannot update this comment");
     }
 
     const {content} = req.body
@@ -89,13 +85,16 @@ const deleteComment = asyncHandler(async (req, res) => {
     }
 
     const comment = await Comment.findById(commentId)
-    if(comment.owner?._id !== req.user?._id){
+    if(comment.owner?._id.toString() !== req.user?._id.toString()){
         throw new ApiError(401, "You cannot delete this comment");
     }
 
-    await Comment.findByIdAndDelete(commentId)
+    const deleteComment = await Comment.findByIdAndDelete(commentId)
+    if(!deleteComment){
+        throw new ApiError(500, "Error occured while deleting the commment")
+    }
 
-    return res.status(200).json(200, {}, "Comment deleted successfully")
+    return res.status(200).json(new ApiResponse(200, {}, "Comment deleted successfully"))
 
 
 })

@@ -23,11 +23,15 @@ const publishAVideo = asyncHandler(async (req, res) => {
     //1.) Getting the inputs and validate them
 
     const { title, description} = req.body
+    // console.log(title,description)
+    // console.log("req.body", req.body)
 
 
-
+    // console.log("req.files", req.files)
     const videoFileLocalPath = req.files?.videoFile[0]?.path;
     const thumbnailLocalPath = req.files?.thumbnail[0]?.path;
+    // console.log(videoFileLocalPath,thumbnailLocalPath)
+
     
     // if (
     //     [title, description, videoFile, thumbnail].some((field) =>
@@ -54,6 +58,9 @@ const publishAVideo = asyncHandler(async (req, res) => {
     const videoFile = await uploadOnCloudinary(videoFileLocalPath)
     const thumbnail = await uploadOnCloudinary(thumbnailLocalPath)
 
+    // console.log("videoFile", videoFile);
+    // console.log("thumbnail", thumbnail);
+
     if(!videoFile.url || !thumbnail.url){
         throw new ApiError(400, "video file and thumbnail is required")
     }
@@ -69,6 +76,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
         duration: videoFile.duration
     })
 
+    // console.log("video",video)
+
     if(!video){
         throw new ApiError(500, "Error occured while creating video document")
     }
@@ -77,7 +86,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
 
     return res
     .status(200)
-    .json(200,video,"Video published successfully")
+    .json(new ApiResponse(200,video,"Video published successfully"))
 
 })
 
@@ -157,24 +166,40 @@ const updateVideo = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid or missing Video Id")
     }
 
-    const {title, description} = req.body
-    const thumbnailLocalPath = req.files?.path
+    const video = await Video.findById(videoId);
+    if(!video){
+        throw new ApiError(404, "Video not found");
+    }
 
+    //console.log("video : ", video.owner?._id, "user : ", req.user?._id)
+    // console.log("video : ", video.owner?._id.toString(), "user : ", req.user?._id.toString())
+
+    if(video.owner?._id.toString() !== req.user?._id.toString()){
+        throw new ApiError(401, "You cannot update this video");
+    }
+
+    // console.log(req.file)
+
+    const {title, description} = req.body
     if(!title || !description){
         throw new ApiError(400,"Title or description missing")
     }
+
+    const thumbnailLocalPath = req.file?.path
+    console.log("thumbnailLocalPath : ", thumbnailLocalPath)
 
     if(!thumbnailLocalPath){
         throw new ApiError(400, "No thumbnail given")
     }
 
     const uploadThumbnail = await uploadOnCloudinary(thumbnailLocalPath)
+    
 
     if(!uploadThumbnail.url){
         throw new ApiError(400, "Error while uploading thumbnail")
     }
 
-    const video = await Video.findByIdAndUpdate(
+    const updatedVideo = await Video.findByIdAndUpdate(
         videoId,
         {
             $set: {
@@ -186,14 +211,14 @@ const updateVideo = asyncHandler(async (req, res) => {
         {new: true}
     )
 
-    if(!video){
+    if(!updatedVideo){
         throw new ApiError(500, "Error while updating")
     }
 
     return res
     .status(200)
     .json(
-        new ApiResponse(200, video, "video details updated successfully")
+        new ApiResponse(200, updatedVideo, "video details updated successfully")
     )
 
 })
@@ -209,7 +234,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Video not found for deletion");
     }
 
-    if(video.owner?._id?.toString() !== req.user?._id?.toString()){
+    if(video.owner?._id.toString() !== req.user?._id.toString()){
         throw new ApiError(401, "You cannot delete this video");
     }
 
@@ -262,7 +287,7 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
 
     return res
     .status(200)
-    .json(200, video.isPublished, "toggled successfully")
+    .json(new ApiResponse(200, video.isPublished, "toggled successfully"))
 })
 
 export {
