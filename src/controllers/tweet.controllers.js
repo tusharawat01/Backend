@@ -1,6 +1,5 @@
 import mongoose, { isValidObjectId } from "mongoose"
 import {Tweet} from "../models/tweet.model.js"
-import {User} from "../models/user.model.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
@@ -134,7 +133,39 @@ const updateTweet = asyncHandler(async (req, res) => {
 })
 
 const deleteTweet = asyncHandler(async (req, res) => {
-    //TODO: delete tweet
+    //get the tweet ID  from params
+    const {tweetId} = req.params
+
+    //validate the tweetId
+    if(!tweetId || !isValidObjectId(tweetId)){
+        throw new ApiError(400, "Tweet Id is missing or Invalid")
+    }
+
+    //check if a valid user or rightful user updating the tweet
+    const tweet = await Tweet.findById(tweetId)
+    if(!tweet){
+        throw new ApiError(404,"Tweet not found")
+    }
+  
+    if(tweet?.owner.toString() !== req.user?._id.toString()){
+        throw new ApiError(400, "You are not allowed to update this tweet")
+    }
+
+    //Delete the tweet
+
+    const deleteTweet = await Tweet.findByIdAndDelete(
+        tweetId
+    )
+
+    if(!deleteTweet){
+        throw new ApiError(500, "error occured while deleting the tweet")
+    }
+
+    //return response
+
+    return res.status(200).json(new ApiResponse(200, {}, "Successfully deleted tweet!"))
+
+
 })
 
 export {
