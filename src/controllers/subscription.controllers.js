@@ -40,9 +40,10 @@ const toggleSubscription = asyncHandler(async (req, res) => {
 
 // controller to return subscriber list of a channel
 const getUserChannelSubscribers = asyncHandler(async (req, res) => {
+    // console.log('Request params:', req.params); // Logging for debugging
     const {channelId} = req.params
-    if(!channelId || !isValidObjectId(channelId)){
-        throw new ApiError(400, "channel Id is missing or invalid")
+    if(!channelId){
+        throw new ApiError(400, "channel Id is missing")
     }
 
     
@@ -63,33 +64,32 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
 
 // controller to return channel list to which user has subscribed
 const getSubscribedChannels = asyncHandler(async (req, res) => {
-    const { subscriberId } = req.params
-    if(!subscriberId || !isValidObjectId(subscriberId)){
-        throw new ApiError(400, "subscriber Id is missing or Invalid")
+    const { subscriberId } = req.params;
+    console.log('Request params:', req.params); // Logging for debugging
+
+    if (!subscriberId) {
+        throw new ApiError(400, "Subscriber ID is missing");
     }
 
-   try {
-     const subscribedChannel = await Subscriber.find({subscriber: subscriberId})
+    try {
+        const subscribedChannels = await Subscriber.find({ subscriber: subscriberId });
 
-     if(subscribedChannel.length === 0){
-        return res.status(200).json(new ApiResponse(200, {}, "No subscribed Channel"))
-     }else{
-        return res
-        .status(200)
-        .json(new ApiResponse(
-            200, 
-            {
-                channel: subscribedChannel,
-                subscribedChannelCount: subscribedChannel.length
-            },
-            "Subscribed Channel fetch successfully"
-        ))
-     }
-   } catch (error) {
-    throw new ApiError(500, "Error occured while fetching Subscribed channel")
-    
-   }
-})
+        if (subscribedChannels.length === 0) {
+            return res.status(200).json(new ApiResponse(200, {}, "No subscribed channels found"));
+        } else {
+            return res.status(200).json(new ApiResponse(
+                200,
+                {
+                    channels: subscribedChannels,
+                    subscribedChannelCount: subscribedChannels.length
+                },
+                "Subscribed channels fetched successfully"
+            ));
+        }
+    } catch (error) {
+        throw new ApiError(500, "Error occurred while fetching subscribed channels");
+    }
+});
 
 export {
     toggleSubscription,

@@ -1,6 +1,6 @@
 import mongoose from "mongoose"
 import {Video} from "../models/video.model.js"
-import {Subscription} from "../models/subscription.model.js"
+import {Subscriber} from "../models/subscriber.model.js"
 import {Like} from "../models/like.model.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
@@ -71,6 +71,10 @@ const getChannelStats = asyncHandler(async (req, res) => {
             }
         }
      ]);
+
+     if(!data){
+        throw new ApiError(500, "error occured while getting channel stats")
+     }
 
      res.status(200).json(new ApiResponse(
         200,

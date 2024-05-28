@@ -7,7 +7,7 @@ import {asyncHandler} from "../utils/asyncHandler.js"
 const createTweet = asyncHandler(async (req, res) => {
     const{content} = req.body
 
-    if(!content){
+    if(!content?.trim()){
         throw new ApiError(400, "Content is required")
     }
 
@@ -44,7 +44,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
             as: "owner",
             pipeline: [
                 {
-                    $prject: {
+                    $project: {
                         fullName: 1,
                         username: 1,
                         avatar: 1
@@ -64,12 +64,12 @@ const getUserTweets = asyncHandler(async (req, res) => {
         }
     },
     {
-        $addField: {
-            $first: {
+        $addFields: {
+            first: {
                 owner: "$owner"
             },
-            $likesCount: {
-                $size: ["tweeetLike"]
+            likesCount: {
+                $size: "$likes"
             }
 
         }
@@ -88,15 +88,18 @@ return res.status(200).json(new ApiResponse(200, tweet, "Tweets fetched successf
 
 const updateTweet = asyncHandler(async (req, res) => {
     //Get Tweet Id from params and Content from body
+   
     const {content} = req.body
     const {tweetId} = req.params
+
+    // console.log("Tweet ID: ", tweetId) // debugging
 
     //validate tweetId oand content
     if(!content){
         throw new ApiError(400, "Content is required")
     }
 
-    if(!tweetId || isValidObjectId(tweetId)){
+    if(!tweetId){
         throw new ApiError(400, "tweet ID is missing or Invalid")
     }
 
@@ -137,7 +140,7 @@ const deleteTweet = asyncHandler(async (req, res) => {
     const {tweetId} = req.params
 
     //validate the tweetId
-    if(!tweetId || !isValidObjectId(tweetId)){
+    if(!tweetId){
         throw new ApiError(400, "Tweet Id is missing or Invalid")
     }
 
